@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.TreeSet;
 
 class Node {
     int value;
@@ -12,30 +11,90 @@ class Node {
     }
 }
 
-public class DijkstraUsingSet {
+class MinHeap {
+    private ArrayList<Node> heap;
+
+    public MinHeap() {
+        this.heap = new ArrayList<>();
+    }
+
+    public void add(Node node) {
+        heap.add(node);
+        int currentIndex = heap.size() - 1;
+        heapifyUp(currentIndex);
+    }
+
+    public Node poll() {
+        if (heap.isEmpty()) {
+            return null;
+        }
+        Node root = heap.get(0);
+        Node lastNode = heap.remove(heap.size() - 1);
+        if (!heap.isEmpty()) {
+            heap.set(0, lastNode);
+            heapifyDown(0);
+        }
+        return root;
+    }
+
+    public boolean isEmpty() {
+        return heap.isEmpty();
+    }
+
+    private void heapifyUp(int index) {
+        while (index > 0) {
+            int parentIndex = (index - 1) / 2;
+            if (heap.get(index).dist >= heap.get(parentIndex).dist) {
+                break;
+            }
+            swap(index, parentIndex);
+            index = parentIndex;
+        }
+    }
+
+    private void heapifyDown(int index) {
+        int smallest = index;
+        int leftChild = 2 * index + 1;
+        int rightChild = 2 * index + 2;
+
+        if (leftChild < heap.size() && heap.get(leftChild).dist < heap.get(smallest).dist) {
+            smallest = leftChild;
+        }
+
+        if (rightChild < heap.size() && heap.get(rightChild).dist < heap.get(smallest).dist) {
+            smallest = rightChild;
+        }
+
+        if (smallest != index) {
+            swap(index, smallest);
+            heapifyDown(smallest);
+        }
+    }
+
+    private void swap(int i, int j) {
+        Node temp = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, temp);
+    }
+}
+
+public class DijkstraUsingPQ {
 
     private static int[] dijkstra(int V, ArrayList<ArrayList<ArrayList<Integer>>> adj, int S) {
-        TreeSet<Node> set = new TreeSet<>((node1, node2) -> {
-            if (node1.value != node2.value && node1.dist == node2.dist) {
-                return 1;
-            }
-            return node1.dist - node2.dist;
-        });
-        // adding source node
-        set.add(new Node(S, 0));
+        MinHeap pq = new MinHeap();
+        pq.add(new Node(S, 0));
         int[] dist = new int[V];
 
-        // Initialize distances to infinity
         for (int i = 0; i < V; i++) {
             dist[i] = Integer.MAX_VALUE;
         }
         dist[S] = 0;
         int c = 1;
-        while (!set.isEmpty()) {
-            Node node = set.pollFirst();
-            System.out
-                    .print(c + "" + (c % 10 == 1 ? "st" : (c % 10 == 2 ? "nd" : (c % 10 == 3 ? "rd" : "th")))
-                            + " Distances: ");
+
+        while (!pq.isEmpty()) {
+            Node node = pq.poll();
+            System.out.print(c + "" + (c % 10 == 1 ? "st" : (c % 10 == 2 ? "nd" : (c % 10 == 3 ? "rd" : "th")))
+                    + " Distances: ");
             c++;
             displayDistances(dist); // Display distances at each step
 
@@ -44,8 +103,8 @@ public class DijkstraUsingSet {
                 int adjNodeDist = adjNodes.get(1);
 
                 if (dist[node.value] + adjNodeDist < dist[adjNode]) {
-                    set.add(new Node(adjNode, dist[node.value] + adjNodeDist));
                     dist[adjNode] = dist[node.value] + adjNodeDist;
+                    pq.add(new Node(adjNode, dist[adjNode]));
                 }
             }
         }
@@ -53,7 +112,6 @@ public class DijkstraUsingSet {
     }
 
     private static void displayDistances(int[] dist) {
-
         for (int i : dist) {
             System.out.print((i == Integer.MAX_VALUE ? "INF" : i) + " ");
         }
@@ -88,12 +146,6 @@ public class DijkstraUsingSet {
             edge.add(dest);
             edge.add(wgt);
             adj.get(src).add(edge);
-
-            // Add edge from dest to src (for undirected graph)
-            // ArrayList<Integer> edge2 = new ArrayList<>();
-            // edge2.add(src);
-            // edge2.add(wgt);
-            // adj.get(dest).add(edge2);
         }
 
         System.out.print("Enter the source vertex: ");
