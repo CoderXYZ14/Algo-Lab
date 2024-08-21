@@ -10,11 +10,15 @@ public:
         return heap.empty();
     }
 
-    void add(pair<int, int> p) {
-        heap.push_back(p);
-        int i = heap.size() - 1;
-        pos[p.second] = i;
-        heapifyUp(i);
+    void addOrUpdate(int node, int weight) {
+        if (pos.find(node) == pos.end()) {
+            heap.push_back({weight, node});
+            int i = heap.size() - 1;
+            pos[node] = i;
+            heapifyUp(i);
+        } else if (weight < heap[pos[node]].first) {
+            decreaseKey(node, weight);
+        }
     }
 
     pair<int, int> poll() {
@@ -32,13 +36,13 @@ public:
         return root;
     }
 
+private:
     void decreaseKey(int node, int newWeight) {
         int i = pos[node];
         heap[i].first = newWeight;
         heapifyUp(i);
     }
 
-private:
     void heapifyUp(int i) {
         while (i != 0 && heap[parent(i)].first > heap[i].first) {
             swapNodes(i, parent(i));
@@ -96,16 +100,19 @@ public:
     int findMSTWeight(Graph& graph) {
         PriorityQueue minHeap;
         vector<bool> visited(graph.vertices, false);
-        vector<pair<int, int>> mstEdges;
+        vector<int> key(graph.vertices, INT_MAX);
         vector<int> parent(graph.vertices, -1);
 
         int mstWeightSum = 0;
         int iteration = 1;
 
-        minHeap.add({0, 0});
+        key[0] = 0;
+        minHeap.addOrUpdate(0, 0);
 
         while (!minHeap.isEmpty()) {
-            auto [currentWeight, currentNode] = minHeap.poll();
+            pair<int, int> current = minHeap.poll();
+            int currentWeight = current.first;
+            int currentNode = current.second;
 
             if (visited[currentNode]) continue;
 
@@ -113,46 +120,50 @@ public:
             mstWeightSum += currentWeight;
 
             if (parent[currentNode] != -1) {
-                mstEdges.push_back({parent[currentNode], currentNode});
+                cout << "Iteration " << iteration << ":" << endl;
+                iteration++;
+
+                cout << "  Current Node: " << currentNode << endl;
+                cout << "  Weight of edge added to MST: " << currentWeight << endl;
+
+                cout << "  Visited Array: ";
+                for (int i = 0; i < visited.size(); i++) {
+                    cout << visited[i] << " ";
+                }
+                cout << endl;
+
+                cout << "  Current MST Edges: ";
+                for (int i = 1; i < graph.vertices; i++) {
+                    if (parent[i] != -1) {
+                        cout << "(" << parent[i] << " - " << i << ") ";
+                    }
+                }
+                cout << endl;
             }
 
-            cout << "Iteration " << iteration << ":" << endl;
-            iteration++;
+            for (int i = 0; i < graph.adjacencyList[currentNode].size(); i++) {
+                int adjNode = graph.adjacencyList[currentNode][i].first;
+                int weight = graph.adjacencyList[currentNode][i].second;
 
-            cout << "  Current Node: " << currentNode << endl;
-            cout << "  Weight of edge added to MST: " << currentWeight << endl;
-
-            cout << "  Visited Array: ";
-            for (bool v : visited) {
-                cout << v << " ";
-            }
-            cout << endl;
-
-            cout << "  Current MST Edges: ";
-            for (const auto& [src, dest] : mstEdges) {
-                cout << "(" << src << " - " << dest << ") ";
-            }
-            cout << endl;
-
-            for (auto& edge : graph.adjacencyList[currentNode]) {
-                if (!visited[edge.first]) {
-                    minHeap.add({edge.second, edge.first});
-                    parent[edge.first] = currentNode;
+                if (!visited[adjNode] && weight < key[adjNode]) {
+                    key[adjNode] = weight;
+                    minHeap.addOrUpdate(adjNode, weight);
+                    parent[adjNode] = currentNode;
                 }
             }
 
             cout << "  MinHeap State: ";
             PriorityQueue tempHeap = minHeap;
             while (!tempHeap.isEmpty()) {
-                auto [weight, node] = tempHeap.poll();
-                cout << "(" << weight << ", " << node << ") ";
+                pair<int, int> temp = tempHeap.poll();
+                cout << "(" << temp.first << ", " << temp.second << ") ";
             }
             cout << endl << endl;
         }
 
         cout << "Final Edges in the Minimum Spanning Tree:" << endl;
-        for (const auto& [src, dest] : mstEdges) {
-            cout << src << " - " << dest << endl;
+        for (int i = 1; i < graph.vertices; i++) {
+            cout << parent[i] << " - " << i << endl;
         }
 
         return mstWeightSum;
