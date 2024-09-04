@@ -21,11 +21,10 @@ public class KnapsackVisualizer extends JFrame {
         setSize(800, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
-
         // Title
         JLabel header = new JLabel("0/1 and Fractional Knapsack Algorithm Visualizer", SwingConstants.CENTER);
         header.setFont(new Font("Serif", Font.BOLD, 24));
-        header.setForeground(new Color(0x2E4053)); // Professional dark blue-gray color
+        header.setForeground(new Color(0x2E4053));
 
         // Input panel
         JPanel inputPanel = new JPanel(new GridLayout(2, 4, 10, 10));
@@ -75,7 +74,7 @@ public class KnapsackVisualizer extends JFrame {
         tablePanelFractional.add(new JScrollPane(tableFractional), BorderLayout.CENTER);
         resultLabelFractional = new JLabel("", SwingConstants.CENTER);
         resultLabelFractional.setFont(new Font("Serif", Font.BOLD, 18));
-        resultLabelFractional.setForeground(new Color(0xC0392B)); // Red color for result label
+        resultLabelFractional.setForeground(new Color(0xC0392B));
         tablePanelFractional.add(resultLabelFractional, BorderLayout.SOUTH);
 
         // Start Button
@@ -83,7 +82,7 @@ public class KnapsackVisualizer extends JFrame {
         startButton.setFont(new Font("Serif", Font.BOLD, 16));
         startButton.setForeground(Color.WHITE);
         startButton.setBackground(new Color(0x1ABC9C)); // Greenish-teal color
-        startButton.setPreferredSize(new Dimension(100, 40)); // Small button size
+        startButton.setPreferredSize(new Dimension(100, 40));
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -92,7 +91,7 @@ public class KnapsackVisualizer extends JFrame {
         });
 
         // Arrange components
-        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));// with 10-pixel gaps between components.
         centerPanel.add(header, BorderLayout.NORTH);
         centerPanel.add(inputPanel, BorderLayout.CENTER);
         centerPanel.add(startButton, BorderLayout.SOUTH);
@@ -135,7 +134,6 @@ public class KnapsackVisualizer extends JFrame {
                         highlightRenderer01.setHighlightCell(i, j);
                         table01.repaint();
 
-                        // Move to the next cell
                         j++;
                         if (j > maxWeight) {
                             j = 1;
@@ -145,7 +143,6 @@ public class KnapsackVisualizer extends JFrame {
                         ((Timer) e.getSource()).stop();
                         // Display the final result
                         resultLabel01.setText("Maximum Profit (0/1 Knapsack): " + dp[n][maxWeight]);
-
                         // Start fractional knapsack after 0/1 knapsack is done
                         startFractionalKnapsack(profits, weights, maxWeight);
                     }
@@ -195,6 +192,7 @@ public class KnapsackVisualizer extends JFrame {
                         currentWeight[0] = maxWeight;
                     }
 
+                    // Update the table with the current item
                     model.setValueAt(items[i][0], i, 0);
                     model.setValueAt(items[i][1], i, 1);
                     model.setValueAt(items[i][2], i, 2);
@@ -205,15 +203,10 @@ public class KnapsackVisualizer extends JFrame {
                     tableFractional.repaint();
 
                     i++;
-                    if (currentWeight[0] == maxWeight) {
+                    if (currentWeight[0] == maxWeight || i >= n) {
                         ((Timer) e.getSource()).stop();
-                        // Display the final result
                         resultLabelFractional.setText("Maximum Profit (Fractional Knapsack): " + totalProfit[0]);
                     }
-                } else {
-                    ((Timer) e.getSource()).stop();
-                    // Display the final result
-                    resultLabelFractional.setText("Maximum Profit (Fractional Knapsack): " + totalProfit[0]);
                 }
             }
         });
@@ -265,9 +258,9 @@ class HighlightRenderer extends DefaultTableCellRenderer {
 
         // Highlight the cell
         if (row == highlightRow && col == highlightCol) {
-            cell.setBackground(Color.YELLOW); // Highlight color
+            cell.setBackground(Color.YELLOW);
         } else {
-            cell.setBackground(Color.WHITE); // Normal cell color
+            cell.setBackground(Color.WHITE);
         }
 
         return cell;
