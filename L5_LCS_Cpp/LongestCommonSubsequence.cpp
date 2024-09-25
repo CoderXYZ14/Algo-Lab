@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <algorithm>
 using namespace std;
 
 class LongestCommonSubsequence
@@ -12,13 +11,11 @@ public:
         int m = text2.length();
         int dp[n + 1][m + 1];
 
-        // Initialize the dp array
         for (int i = 0; i <= n; i++)
             dp[i][0] = 0;
         for (int j = 0; j <= m; j++)
             dp[0][j] = 0;
 
-        // Fill the dp array and print intermediate steps
         for (int i = 1; i <= n; i++)
         {
             for (int j = 1; j <= m; j++)
@@ -27,14 +24,10 @@ public:
                     dp[i][j] = 1 + dp[i - 1][j - 1];
                 else
                     dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
-
-                // Print the current state of dp table
-                cout << "dp[" << i << "][" << j << "] = " << dp[i][j]
-                     << " (comparing '" << text1[i - 1] << "' and '" << text2[j - 1] << "')" << endl;
+                cout << "dp[" << i << "][" << j << "] = " << dp[i][j] << " (comparing '" << text1[i - 1] << "' and '" << text2[j - 1] << "')" << endl;
             }
         }
 
-        // Print the final dp table
         cout << "\nFinal DP table:" << endl;
         for (int i = 0; i <= n; i++)
         {
@@ -43,32 +36,38 @@ public:
             cout << endl;
         }
 
-        // Construct the longest common subsequence
         string lcs = "";
         int i = n, j = m;
         while (i > 0 && j > 0)
         {
             if (text1[i - 1] == text2[j - 1])
             {
-                lcs += text1[i - 1]; // Append the character to LCS
+                lcs += text1[i - 1];
                 i--;
                 j--;
             }
             else if (dp[i - 1][j] > dp[i][j - 1])
-            {
                 i--;
-            }
             else
-            {
                 j--;
-            }
         }
 
-        // Since we constructed lcs backwards, reverse it
-        reverse(lcs.begin(), lcs.end());
+        reverse(lcs);
         cout << "Longest Common Subsequence: " << lcs << endl;
 
         return dp[n][m];
+    }
+
+    void reverse(string &str)
+    {
+        int left = 0;
+        int right = str.length() - 1;
+        while (left < right)
+        {
+            swap(str[left], str[right]);
+            left++;
+            right--;
+        }
     }
 };
 
@@ -76,13 +75,11 @@ int main()
 {
     LongestCommonSubsequence lcs;
     string text1, text2;
-    // User input for the two strings
     cout << "Enter the first string: ";
     cin >> text1;
     cout << "Enter the second string: ";
     cin >> text2;
 
-    // Calculate and display the length of the longest common subsequence
     int result = lcs.longestCommonSubsequence(text1, text2);
     cout << "Length of Longest Common Subsequence: " << result << endl;
     return 0;
