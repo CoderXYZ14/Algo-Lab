@@ -509,13 +509,10 @@ class PriorityScheduler extends Scheduler {
     @Override
     public SchedulingResult schedule() {
         ArrayList<GanttChartEntry> ganttChart = new ArrayList<>();
-        // Changed comparator to prioritize higher numbers
-        PriorityQueue<Process> readyQueue = new PriorityQueue<>((p1, p2) -> p2.priority - p1.priority);
+        ArrayList<Process> readyQueue = new ArrayList<>();
         ArrayList<Process> tempProcesses = new ArrayList<>(processes);
         int currentTime = 0;
         int completed = 0;
-        Process currentProcess = null;
-        int lastSwitchTime = 0;
 
         while (completed < processes.size()) {
             // Add newly arrived processes to ready queue
@@ -527,53 +524,34 @@ class PriorityScheduler extends Scheduler {
                 }
             }
 
-            // Handle preemption
-            if (isPreemptive && currentProcess != null && !readyQueue.isEmpty()) {
-                Process highestPriority = readyQueue.peek();
-                // Changed comparison to handle higher priority numbers
-                if (highestPriority.priority > currentProcess.priority) {
-                    readyQueue.add(currentProcess);
-                    ganttChart.add(new GanttChartEntry(currentProcess.pid, lastSwitchTime, currentTime));
-                    currentProcess = readyQueue.poll();
-                    lastSwitchTime = currentTime;
-                    if (!currentProcess.started) {
-                        currentProcess.responseTime = currentTime - currentProcess.arrivalTime;
-                        currentProcess.started = true;
-                    }
-                }
-            }
+            // Sort ready queue by priority (higher number = higher priority)
+            readyQueue.sort((p1, p2) -> p2.priority - p1.priority);
 
-            if (currentProcess == null || currentProcess.remainingTime == 0) {
-                if (currentProcess != null && currentProcess.remainingTime == 0) {
-                    ganttChart.add(new GanttChartEntry(currentProcess.pid, lastSwitchTime, currentTime));
+            if (!readyQueue.isEmpty()) {
+                Process currentProcess = readyQueue.get(0);
+                
+                if (!currentProcess.started) {
+                    currentProcess.responseTime = currentTime - currentProcess.arrivalTime;
+                    currentProcess.started = true;
+                }
+
+                int executionTime = 1; // Execute for 1 time unit
+                ganttChart.add(new GanttChartEntry(currentProcess.pid, currentTime, currentTime + executionTime));
+                currentTime += executionTime;
+                currentProcess.remainingTime -= executionTime;
+
+                if (currentProcess.remainingTime == 0) {
+                    readyQueue.remove(0);
                     calculateTimes(currentProcess, currentTime);
                     completed++;
+                } else if (isPreemptive) {
+                    // For preemptive, we'll re-evaluate priorities after each time unit
+                    readyQueue.remove(0);
+                    readyQueue.add(currentProcess);
                 }
-                
-                if (!readyQueue.isEmpty()) {
-                    currentProcess = readyQueue.poll();
-                    if (!currentProcess.started) {
-                        currentProcess.responseTime = currentTime - currentProcess.arrivalTime;
-                        currentProcess.started = true;
-                    }
-                    lastSwitchTime = currentTime;
-                } else if (tempProcesses.isEmpty()) {
-                    break;
-                } else {
-                    currentTime = tempProcesses.get(0).arrivalTime;
-                    continue;
-                }
-            }
-
-            if (currentProcess != null) {
-                currentProcess.remainingTime--;
+            } else {
                 currentTime++;
             }
-        }
-
-        if (currentProcess != null && currentProcess.remainingTime == 0) {
-            ganttChart.add(new GanttChartEntry(currentProcess.pid, lastSwitchTime, currentTime));
-            calculateTimes(currentProcess, currentTime);
         }
 
         return new SchedulingResult(new ArrayList<>(processes), ganttChart);
