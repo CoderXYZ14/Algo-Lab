@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.Queue;
 
 import javax.swing.table.DefaultTableModel;
-import java.awt.List;
+
 
 public class CPUSchedulerGUI extends JFrame {
     private JTextField processCountField;
@@ -115,9 +115,9 @@ public class CPUSchedulerGUI extends JFrame {
     private void createProcessTable() {
         try {
             int processCount = Integer.parseInt(processCountField.getText());
-            if (processCount <= 0) {
-                throw new IllegalArgumentException("Process count must be positive");
-            }
+            // if (processCount <= 0) {
+            //     throw new IllegalArgumentException("Process count must be positive");
+            // }
             processTableModel.setRowCount(0);
             for (int i = 0; i < processCount; i++) {
                 processTableModel.addRow(new Object[]{String.valueOf(i + 1), "0", "1", "0"});
@@ -143,9 +143,9 @@ public class CPUSchedulerGUI extends JFrame {
             int burstTime = Integer.parseInt(processTableModel.getValueAt(i, 2).toString());
             int priority = Integer.parseInt(processTableModel.getValueAt(i, 3).toString());
             
-            if (arrivalTime < 0 || burstTime <= 0 || priority < 0) {
-                throw new IllegalArgumentException("Invalid input values");
-            }
+            // if (arrivalTime < 0 || burstTime <= 0 || priority < 0) {
+            //     throw new IllegalArgumentException("Invalid input values");
+            // }
             
             processes.add(new Process(pid, arrivalTime, burstTime, priority));
         } catch (NumberFormatException e) {
@@ -154,21 +154,10 @@ public class CPUSchedulerGUI extends JFrame {
                 "Invalid Input", 
                 JOptionPane.ERROR_MESSAGE);
             return new ArrayList<>();
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Invalid input values in row " + (i + 1) + ". Please ensure:\n" +
-                "- Arrival time is non-negative\n" +
-                "- Burst time is positive\n" +
-                "- Priority is non-negative", 
-                "Invalid Input", 
-                JOptionPane.ERROR_MESSAGE);
-            return new ArrayList<>();
         }
     }
     return processes;
 }
-
-// Also, let's modify the runSJF, runRoundRobin, and runPriority methods to check if processes are available
 
 private void runSJF() {
     ArrayList<Process> processes = getProcessesFromTable();
