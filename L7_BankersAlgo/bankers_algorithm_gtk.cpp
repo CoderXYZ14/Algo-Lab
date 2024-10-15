@@ -140,73 +140,86 @@ public:
         BankersAlgorithm *bankersAlgo = static_cast<BankersAlgorithm *>(data);
         bankersAlgo->runBankersAlgorithm();
     }
-
     void runBankersAlgorithm()
     {
         getTableData();
         calculateNeed();
 
-        std::vector<bool> finish(numProcesses, false);
         std::vector<int> work = available;
+        std::vector<bool> finish(numProcesses, false);
         std::vector<int> safeSequence;
 
-        while (safeSequence.size() < numProcesses)
+        int count = 0;
+        while (count < numProcesses)
         {
             bool found = false;
             for (int i = 0; i < numProcesses; i++)
             {
-                if (!finish[i] && canAllocate(i, work))
+                if (!finish[i])
                 {
-                    for (int j = 0; j < numResources; j++)
+                    int j;
+                    for (j = 0; j < numResources; j++)
+                        if (need[i][j] > work[j])
+                            break;
+
+                    if (j == numResources)
                     {
-                        work[j] += allocation[i][j];
+                        for (int k = 0; k < numResources; k++)
+                            work[k] += allocation[i][k];
+                        safeSequence.push_back(i);
+                        finish[i] = true;
+                        found = true;
+                        count++;
                     }
-                    safeSequence.push_back(i);
-                    finish[i] = true;
-                    found = true;
-                    break;
                 }
             }
 
             if (!found)
-            {
                 break;
-            }
         }
 
-        std::stringstream output;
-        if (safeSequence.size() == numProcesses)
+        std::stringstream ss;
+        if (count == numProcesses)
         {
-            output << "Safe sequence: ";
+            ss << "Safe sequence found: ";
             for (size_t i = 0; i < safeSequence.size(); i++)
             {
-                output << "P" << safeSequence[i];
+                ss << "P" << safeSequence[i];
                 if (i < safeSequence.size() - 1)
-                {
-                    output << " -> ";
-                }
+                    ss << " -> ";
             }
-            output << "\nSystem is in a safe state.";
-            gtk_label_set_text(GTK_LABEL(resultLabel), "System is in a safe state.");
         }
         else
         {
-            output << "System is in an unsafe state.";
-            gtk_label_set_text(GTK_LABEL(resultLabel), "System is in an unsafe state.");
+            ss << "The system is in an unsafe state.";
         }
 
-        gtk_text_buffer_set_text(outputBuffer, output.str().c_str(), -1);
-    }
-    bool canAllocate(int process, const std::vector<int> &work)
-    {
+        gtk_label_set_text(GTK_LABEL(resultLabel), ss.str().c_str());
+
+        // Display detailed output
+        ss.str("");
+        ss << "Detailed Analysis:\n\n";
+        ss << "Allocation Matrix:\n";
+        printMatrix(ss, allocation);
+        ss << "\nMax Need Matrix:\n";
+        printMatrix(ss, maxNeed);
+        ss << "\nAvailable Resources:\n";
         for (int i = 0; i < numResources; i++)
+            ss << available[i] << " ";
+        ss << "\n\nNeed Matrix:\n";
+        printMatrix(ss, need);
+
+        gtk_text_buffer_set_text(outputBuffer, ss.str().c_str(), -1);
+    }
+
+    void printMatrix(std::stringstream &ss, const std::vector<std::vector<int>> &matrix)
+    {
+        for (const auto &row : matrix)
         {
-            if (need[process][i] > work[i])
-            {
-                return false;
-            }
+            for (int val : row)
+                ss << val << " ";
+            ss << "\n";
         }
-        return true;
     }
 
     void getTableData()
