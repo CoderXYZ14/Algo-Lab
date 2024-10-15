@@ -20,6 +20,7 @@ private:
     GtkWidget *allocationGrid;
     GtkWidget *maxNeedGrid;
     GtkWidget *availableGrid;
+    GtkWidget *needGrid;
     GtkWidget *resultLabel;
     GtkTextBuffer *outputBuffer;
     GtkWidget *outputView;
@@ -72,6 +73,7 @@ public:
         allocationGrid = gtk_grid_new();
         maxNeedGrid = gtk_grid_new();
         availableGrid = gtk_grid_new();
+        needGrid = gtk_grid_new();
 
         gtk_grid_attach(GTK_GRID(tablesGrid), gtk_label_new("Allocation:"), 0, 0, 1, 1);
         gtk_grid_attach(GTK_GRID(tablesGrid), allocationGrid, 0, 1, 1, 1);
@@ -81,6 +83,9 @@ public:
 
         gtk_grid_attach(GTK_GRID(tablesGrid), gtk_label_new("Available:"), 2, 0, 1, 1);
         gtk_grid_attach(GTK_GRID(tablesGrid), availableGrid, 2, 1, 1, 1);
+
+        gtk_grid_attach(GTK_GRID(tablesGrid), gtk_label_new("Need:"), 3, 0, 1, 1);
+        gtk_grid_attach(GTK_GRID(tablesGrid), needGrid, 3, 1, 1, 1);
 
         GtkWidget *calculateButton = gtk_button_new_with_label("Calculate");
         g_signal_connect(calculateButton, "clicked", G_CALLBACK(onCalculate), this);
@@ -93,14 +98,8 @@ public:
         outputBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(outputView));
         GtkWidget *scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
         gtk_container_add(GTK_CONTAINER(scrolledWindow), outputView);
-        gtk_widget_set_size_request(scrolledWindow, -1, 200);
+        gtk_widget_set_size_request(scrolledWindow, -1, 100);
         gtk_grid_attach(GTK_GRID(grid), scrolledWindow, 0, 4, 5, 1);
-    }
-
-    static void onCreateTables(GtkWidget *widget, gpointer data)
-    {
-        BankersAlgorithm *bankersAlgo = static_cast<BankersAlgorithm *>(data);
-        bankersAlgo->createTables();
     }
 
     void createTables()
@@ -111,6 +110,7 @@ public:
         setupTable(allocationGrid, "Allocation");
         setupTable(maxNeedGrid, "Max Need");
         setupTable(availableGrid, "Available", true);
+        setupTable(needGrid, "Need");
     }
 
     void setupTable(GtkWidget *grid, const std::string &name, bool isAvailable = false)
@@ -135,15 +135,11 @@ public:
         gtk_widget_show_all(grid);
     }
 
-    static void onCalculate(GtkWidget *widget, gpointer data)
-    {
-        BankersAlgorithm *bankersAlgo = static_cast<BankersAlgorithm *>(data);
-        bankersAlgo->runBankersAlgorithm();
-    }
     void runBankersAlgorithm()
     {
         getTableData();
         calculateNeed();
+        updateNeedTable();
 
         std::vector<int> work = available;
         std::vector<bool> finish(numProcesses, false);
@@ -188,37 +184,25 @@ public:
                 if (i < safeSequence.size() - 1)
                     ss << " -> ";
             }
+            ss << "\n\nSystem is in a safe state.";
         }
         else
         {
-            ss << "The system is in an unsafe state.";
+            ss << "The system is in an unsafe state (deadlock detected).";
         }
-
-        gtk_label_set_text(GTK_LABEL(resultLabel), ss.str().c_str());
-
-        // Display detailed output
-        ss.str("");
-        ss << "Detailed Analysis:\n\n";
-        ss << "Allocation Matrix:\n";
-        printMatrix(ss, allocation);
-        ss << "\nMax Need Matrix:\n";
-        printMatrix(ss, maxNeed);
-        ss << "\nAvailable Resources:\n";
-        for (int i = 0; i < numResources; i++)
-            ss << available[i] << " ";
-        ss << "\n\nNeed Matrix:\n";
-        printMatrix(ss, need);
 
         gtk_text_buffer_set_text(outputBuffer, ss.str().c_str(), -1);
     }
 
-    void printMatrix(std::stringstream &ss, const std::vector<std::vector<int>> &matrix)
+    void updateNeedTable()
     {
-        for (const auto &row : matrix)
+        for (int i = 0; i < numProcesses; i++)
         {
-            for (int val : row)
-                ss << val << " ";
-            ss << "\n";
+            for (int j = 0; j < numResources; j++)
+            {
+                GtkWidget *entry = gtk_grid_get_child_at(GTK_GRID(needGrid), j, i);
+                gtk_entry_set_text(GTK_ENTRY(entry), std::to_string(need[i][j]).c_str());
+            }
         }
     }
 
@@ -248,6 +232,7 @@ public:
             available.push_back(std::stoi(gtk_entry_get_text(GTK_ENTRY(availEntry))));
         }
     }
+
     void calculateNeed()
     {
         need.clear();
@@ -259,6 +244,18 @@ public:
                 need[i][j] = maxNeed[i][j] - allocation[i][j];
             }
         }
+    }
+
+    static void onCreateTables(GtkWidget *widget, gpointer data)
+    {
+        BankersAlgorithm *bankersAlgo = static_cast<BankersAlgorithm *>(data);
+        bankersAlgo->createTables();
+    }
+
+    static void onCalculate(GtkWidget *widget, gpointer data)
+    {
+        BankersAlgorithm *bankersAlgo = static_cast<BankersAlgorithm *>(data);
+        bankersAlgo->runBankersAlgorithm();
     }
 };
 
